@@ -67,7 +67,7 @@ vcAddObject(oi); oiWindow;
 sensor = sensorCompute(sensor,oi);
 sensor = sensorSet(sensor,'name','Simulated');
 vcAddObject(sensor);
-sensorImageWindow;
+sensorWindow('scale',1);
 
 %% Get the measured camera five band data for the MCC and this image
 showSelection = 1;
