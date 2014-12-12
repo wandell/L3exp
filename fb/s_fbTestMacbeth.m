@@ -13,8 +13,8 @@ workDir = fullfile(L3expRootPath,'fb');
 wavelength = [400:10:680]';
 
 % Exposure index for the 5-band camera
-expIdx = 1; 
-% expIdx = 4;
+% expIdx = 1; 
+expIdx = 4;
 
 [sensor, optics] = fbCreate(wavelength', expIdx);
 
@@ -23,8 +23,7 @@ oi = oiSet(oi,'optics',optics);
 oi = oiSet(oi,'name','fb optics');
 
 %% Here is an image with the FB camera and an MCC
-fName = fullfile(workDir,'Steve_2.8_Tungsten_exp_1.mat');
-% fName = fullfile(workDir,'Steve_2.8_Tungsten_exp_4.mat');
+fName = fullfile(workDir,sprintf('Steve_2.8_Tungsten_exp_%i.mat',expIdx));
 tmp = load(fName);
 
 % The raw camera data
@@ -46,12 +45,28 @@ ylabel('Energy watts/sr/nm/m2');
 
 sensorData = sensor;
 sensorData = sensorSet(sensorData,'volts',data);
+sensorData = sensorSet(sensorData,'dv',data*(2^sensorGet(sensorData,'nbits')));
 sensorData = sensorSet(sensorData,'name','data');
 
 vcAddObject(sensorData); sensorWindow('scale',1);
 
+%% Get the measured camera five band data for the MCC and this image
+showSelection = 1;
+fullData = 1;
+
+cornerPoints = [ 113         569
+         106        1188
+         547        1192
+         540         546];
+
+mRGB = macbethSelect(sensorData,showSelection,fullData,cornerPoints);
+sData = cell2mat(cellfun(@nanmean,mRGB','UniformOutput',false));
+
+
+
 %%
-scene = sceneCreate('macbethD65',[],wavelength);
+spectrum.wave = wavelength;
+scene = sceneCreate('macbethD65',[],spectrum);
 scene = sceneSet(scene,'fov',5);
 SPDi = interp1(ill.wave,ill.SPD,wavelength);
 % vcNewGraphWin; plot(ill.wave,ill.SPD,'k-',wavelength,SPDi,'ro')
@@ -69,29 +84,41 @@ sensor = sensorSet(sensor,'name','Simulated');
 vcAddObject(sensor);
 sensorWindow('scale',1);
 
-%% Get the measured camera five band data for the MCC and this image
-showSelection = 1;
-fullData = 1;
-[mRGB mLocs, pSize, cornerPoints] = macbethSelect(sensorData,showSelection,fullData);
 
-% Select the proper image in the sensor window!
-sData = zeros(24,sensorGet(sensorData,'n filters'));
-for ii=1:24
-    sData(ii,:) = nanmean(mRGB{ii});
-end
 
 %% Select the proper image in the sensor window!
-[mRGB mLocs, pSize, cornerPoints] = macbethSelect(sensor,showSelection,fullData);
-sSim = zeros(24,sensorGet(sensor,'n filters'));
-for ii=1:24
-    sSim(ii,:) = nanmean(mRGB{ii});
-end
 
-%
+cornerPoints = [    11    59
+    78    59
+    78    15
+    10    15];
+
+mRGB = macbethSelect(sensor,1,1,cornerPoints);
+sSim = cell2mat(cellfun(@nanmean,mRGB','UniformOutput',false));
+
+%% Plot the data
 vcNewGraphWin;
-plot(sSim(:)/max(sSim(:)),sData(:)/max(sData(:)),'o');
-axis equal; grid on
-identityLine;
+styles = {'ro','go','bo','co','yo'};
+
+for i=1:5
+    
+    % Least-squares fit
+    A = [sSim(:,i) ones(24,1)];
+    b = sData(:,i);
+    coeffs = A\b;
+    fprintf('Gain %f, offset %f\n',coeffs(1),coeffs(2));
+    
+    subplot(2,3,i);
+    axis equal; grid on; hold on;
+    plot(sSim(:,i),sData(:,i),styles{i});
+    xlabel('Simulated');
+    ylabel('Captured');
+    
+    % Plot the data after least-squares fitting
+    plot(A*coeffs,b,'.');
+    
+    plot(linspace(0,max([sSim(:,i); sData(:,i)]*1.1),10),linspace(0,max([sSim(:,i); sData(:,i)]*1.1),10),'r:');
+end
 
 
 
