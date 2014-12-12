@@ -13,7 +13,7 @@ workDir = fullfile(L3expRootPath,'fb');
 wavelength = [400:10:680]';
 
 % Exposure index for the 5-band camera
-% expIdx = 1; 
+expIdx = 1; 
 expIdx = 4;
 
 [sensor, optics] = fbCreate(wavelength', expIdx);
@@ -32,9 +32,10 @@ data = rot90(tmp.RAW,1);
 imagesc(data);
 axis image
 
-% The SPD of the light
+% The SPD of the light, divide out by the white Macbeth patch reflectance
+macbethReflectances = ieReadSpectra(fullfile(isetRootPath,'data','surfaces','macbethChart'),tmp.wave);
 vcNewGraphWin;
-ill.SPD = tmp.SPD;
+ill.SPD = tmp.SPD./macbethReflectances(:,4);
 ill.wave = tmp.wave;
 
 plot(ill.wave,ill.SPD);
