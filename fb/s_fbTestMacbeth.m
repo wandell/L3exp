@@ -13,7 +13,7 @@ workDir = fullfile(L3expRootPath,'fb');
 wavelength = [400:10:680]';
 
 % Exposure index for the 5-band camera
-expIdx = 1; 
+% expIdx = 1; 
 expIdx = 4;
 
 [sensor, optics] = fbCreate(wavelength', expIdx);
@@ -28,8 +28,9 @@ tmp = load(fName);
 
 % The raw camera data
 vcNewGraphWin;
-data = rot90(tmp.RAW,1);
-imagesc(data);
+data = tmp.RAW;
+dataRot = rot90(tmp.RAW,1);
+imagesc(dataRot);
 axis image
 
 % The SPD of the light, divide out by the white Macbeth patch reflectance
@@ -55,12 +56,12 @@ vcAddObject(sensorData); sensorWindow('scale',1);
 showSelection = 1;
 fullData = 1;
 
-cornerPoints = [ 113         569
-         106        1188
-         547        1192
-         540         546];
+cornerPoints = [ 718   109
+    88   129
+    83   540
+   725   530];
 
-mRGB = macbethSelect(sensorData,showSelection,fullData,cornerPoints);
+[mRGB, ~, ~, ~] = macbethSelect(sensorData,showSelection,fullData,cornerPoints);
 sData = cell2mat(cellfun(@nanmean,mRGB','UniformOutput',false));
 
 
@@ -68,7 +69,7 @@ sData = cell2mat(cellfun(@nanmean,mRGB','UniformOutput',false));
 %%
 spectrum.wave = wavelength;
 scene = sceneCreate('macbethD65',[],spectrum);
-scene = sceneSet(scene,'fov',5);
+scene = sceneSet(scene,'fov',60);
 SPDi = interp1(ill.wave,ill.SPD,wavelength);
 % vcNewGraphWin; plot(ill.wave,ill.SPD,'k-',wavelength,SPDi,'ro')
 
@@ -89,12 +90,12 @@ sensorWindow('scale',1);
 
 %% Select the proper image in the sensor window!
 
-cornerPoints = [    11    59
-    78    59
-    78    15
-    10    15];
+cornerPoints = [    199         658
+        1080         658
+        1085          68
+         196          63];
 
-mRGB = macbethSelect(sensor,1,1,cornerPoints);
+[mRGB, ~, ~, ~] = macbethSelect(sensor,1,1,cornerPoints);
 sSim = cell2mat(cellfun(@nanmean,mRGB','UniformOutput',false));
 
 %% Plot the data
