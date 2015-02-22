@@ -40,6 +40,29 @@ camera = cameraSet(camera,'ip L3',L3);
 % Clear the computational data from the camera.
 camera = cameraClearData(camera);
 whos camera
+camera = cameraSet(camera,'sensor exp time',0.05);
+
+scene = sceneCreate;
+% This is doing some scaling that I don't understand.
+% Open it up and look
+scene = sceneSet(scene,'mean luminance',50);
+fprintf('scene mean luminance %g\n',sceneGet(scene,'mean luminance'));
+camera = cameraCompute(camera,scene);
+fprintf('scene mean luminance %g\n',sceneGet(scene,'mean luminance'));
+
+% Have a look
+cameraWindow(camera,'ip');
+cameraWindow(camera,'sensor');
+cameraWindow(camera,'oi');
+
+scene = sceneCreate('rings rays');
+scene = sceneSet(scene,'mean luminance',0.00001);
+vcAddObject(scene); sceneWindow;
+camera = cameraCompute(camera,scene);
+cameraWindow(camera,'ip');
+
+
+%% Let's make a new Bayer camera, train it, and render with it
 
 % Now we use the camera design for rendering images
 
