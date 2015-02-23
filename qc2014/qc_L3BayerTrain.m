@@ -20,38 +20,50 @@
 %% 
 ieInit
 
-%% Train an L^3 camera
-% See s_L3TrainCamera
+%% Load an L3 camera
 
 % The default camera is an RGBW with an L3 structure that has seven small
-% training scenes. 
+% training scenes.   We should make more cameras and put in an fname option
+% into the L3 cameraCreate call.  Maybe instead of L3struct as a second
+% argument, we could have a string that is the camera name to load?
 camera = cameraCreate('L3');
 
+
+%% Train
 % Initialize some training scenes
 L3 = cameraGet(camera,'ip L3');
 L3 = L3InitTrainingScenes(L3);
+
 % Shrink a lot
 s = L3Get(L3,'scenes'); s = s(1); L3 = L3Set(L3,'scenes',s);
-
-% Train
 L3 = L3Train(L3);
 camera = cameraSet(camera,'ip L3',L3);
 
 % Clear the computational data from the camera.
 camera = cameraClearData(camera);
 whos camera
-camera = cameraSet(camera,'sensor exp time',0.05);
+
+%% MUST CHECK WHETHER USUAL ENTRY IN RESULTS IS sRGB or lRGB!
+% I think usual is sRGB, and L3 is putting in lRGB.
 
 scene = sceneCreate;
-% This is doing some scaling that I don't understand.
-% Open it up and look
-scene = sceneSet(scene,'mean luminance',50);
+% sceneFromFile ...
+scene = sceneSet(scene,'mean luminance',5);
 fprintf('scene mean luminance %g\n',sceneGet(scene,'mean luminance'));
+
+% L3 at the front makes sure we get an L3 rendering method call
+camera = cameraSet(camera,'sensor exp time',0.05);
+camera = cameraSet(camera,'ip name',sprintf('L3 %s',sceneGet(scene,'name')));
 camera = cameraCompute(camera,scene);
-fprintf('scene mean luminance %g\n',sceneGet(scene,'mean luminance'));
 
 % Have a look
 cameraWindow(camera,'ip');
+
+%% Use the standard processing pipeline
+camera = cameraSet(camera,'ip name','standard');
+cameraWindow(camera,'ip');
+
+%% Look at other stuff, if you like
 cameraWindow(camera,'sensor');
 cameraWindow(camera,'oi');
 
