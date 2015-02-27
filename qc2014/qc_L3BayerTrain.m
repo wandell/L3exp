@@ -1,23 +1,8 @@
 %% Getting ready for a lot of training
 %
-% The following code is taken from s_L3render and the functions that are
-% subsequently called.  There have been slight modifications as needed
-% and the plotting code has been added.  Indentations correspond with which
-% m files the code was taken from.
-
-% I cleaned up the default camera, getting rid of the scene training data
-% and the cos4th and ...
-% save('tmpCameraDefault','camera');
-% oi = cameraGet(camera,'oi');
-% L3 = cameraGet(camera,'ip L3');
-% L3 = L3Set(L3,'oi',oi);
-% camera = cameraSet(camera,'ip L3',L3);
-% camera = cameraClearData(camera);
-% 
-% fname = fullfile(L3rootpath,'data','cameras','L3defaultcamera');
-% save(fname,'camera');
-
-%% 
+% See qc_L3DefaultExample.m
+%
+%% Clean the environment
 ieInit
 
 %% Load an L3 camera
@@ -28,27 +13,57 @@ ieInit
 % argument, we could have a string that is the camera name to load?
 camera = cameraCreate('L3');
 
+% Render a simple scene
+scene = sceneCreate;
+camera = cameraCompute(camera,scene);
+cameraGet(camera,'ip gamma')
+% camera = cameraSet(camera,'ip gamma',1);
+cameraWindow(camera,'ip');
 
-%% Train
+%%
+scene = sceneSet(scene,'mean luminance',10);
+camera = cameraCompute(camera,scene);
+camera = cameraSet(camera,'ip gamma',1);
+cameraWindow(camera,'ip');
+
+
+
+%% Train a Bayer camera
+
+L3 = L3Create;
+
+sensor = sensorCreate;
+sensor = sensorSet(sensor,'size',[256 256]);
+L3 = L3Set(L3,'design sensor',sensor);
+
+camera = cameraCreate('L3',L3);
+
 % Initialize some training scenes
 L3 = cameraGet(camera,'ip L3');
 L3 = L3InitTrainingScenes(L3);
 
 % Shrink a lot
-s = L3Get(L3,'scenes'); s = s(1); L3 = L3Set(L3,'scenes',s);
+s = L3Get(L3,'scenes'); s = s(1:3); L3 = L3Set(L3,'scenes',s);
 L3 = L3Train(L3);
 camera = cameraSet(camera,'ip L3',L3);
+cameraBayer = camera;
 
 % Clear the computational data from the camera.
-camera = cameraClearData(camera);
-whos camera
+cameraBayer = cameraClearData(camerayera);
+whos cameraBayer
+cameraBayer = cameraCompute(cameraBayer,scene);
+cameraWindow(cameraBayer,'ip')
 
-%% MUST CHECK WHETHER USUAL ENTRY IN RESULTS IS sRGB or lRGB!
-% I think usual is sRGB, and L3 is putting in lRGB.
+%% Render a scene
 
-scene = sceneCreate;
-% sceneFromFile ...
-scene = sceneSet(scene,'mean luminance',5);
+% Scene options
+% scene = sceneCreate;
+% scene = sceneCreate('rings rays');
+% scene = sceneCreate('freq orient');
+fname = fullfile(isetRootPath,'data','images','rgb','eagle.jpg');
+scene = sceneFromFile(fname,'rgb');
+
+scene = sceneSet(scene,'mean luminance',10);
 fprintf('scene mean luminance %g\n',sceneGet(scene,'mean luminance'));
 
 % L3 at the front makes sure we get an L3 rendering method call
@@ -59,9 +74,14 @@ camera = cameraCompute(camera,scene);
 % Have a look
 cameraWindow(camera,'ip');
 
+
+%%
+
 %% Use the standard processing pipeline
 camera = cameraSet(camera,'ip name','standard');
 cameraWindow(camera,'ip');
+
+%% Try a standard Bayer camera
 
 %% Look at other stuff, if you like
 cameraWindow(camera,'sensor');
