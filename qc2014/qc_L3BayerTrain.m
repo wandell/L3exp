@@ -26,33 +26,26 @@ camera = cameraCompute(camera,scene);
 camera = cameraSet(camera,'ip gamma',1);
 cameraWindow(camera,'ip');
 
-
-
 %% Train a Bayer camera
-
-L3 = L3Create;
 
 sensor = sensorCreate;
 sensor = sensorSet(sensor,'size',[256 256]);
-L3 = L3Set(L3,'design sensor',sensor);
+sensor = sensorSet(sensor,'exp time',0.05);
 
+L3 = L3Create;
+L3 = L3Set(L3,'design sensor',sensor);
 camera = cameraCreate('L3',L3);
 
 % Initialize some training scenes
 L3 = cameraGet(camera,'ip L3');
 L3 = L3InitTrainingScenes(L3);
-
-% Shrink a lot
-s = L3Get(L3,'scenes'); s = s(1:3); L3 = L3Set(L3,'scenes',s);
 L3 = L3Train(L3);
 camera = cameraSet(camera,'ip L3',L3);
-cameraBayer = camera;
 
 % Clear the computational data from the camera.
-cameraBayer = cameraClearData(camerayera);
-whos cameraBayer
-cameraBayer = cameraCompute(cameraBayer,scene);
-cameraWindow(cameraBayer,'ip')
+camera = cameraClearData(camera);
+camera = cameraCompute(camera,scene);
+cameraWindow(camera,'ip')
 
 %% Render a scene
 
@@ -67,7 +60,7 @@ scene = sceneSet(scene,'mean luminance',10);
 fprintf('scene mean luminance %g\n',sceneGet(scene,'mean luminance'));
 
 % L3 at the front makes sure we get an L3 rendering method call
-camera = cameraSet(camera,'sensor exp time',0.05);
+camera = cameraSet(camera,'sensor exp time',.1);
 camera = cameraSet(camera,'ip name',sprintf('L3 %s',sceneGet(scene,'name')));
 camera = cameraCompute(camera,scene);
 
