@@ -65,14 +65,49 @@ patch = [X(:),Y(:)];
 r - jr
 c - jc
 
+% I think the row offset is 12.
+% I am not sure if the col offset is 14 or 15
+
+%%
 rStart = 1500;
-cStart = 500;
-n = 256;
-sjpg = jpg(rStart:(rStart+n),(cStart:(cStart+n)),2);
-sraw = raw(rStart:(rStart+n),(cStart:(cStart+n)));
+cStart = 600;
+n = 128;
+channel = 1;
+sjpg = jpg(rStart:(rStart+n-1),(cStart:(cStart+n-1)),channel);
+sraw = raw(rStart:(rStart+n-1),(cStart:(cStart+n-1)));
 vcNewGraphWin; imagesc(sjpg), axis image; colormap(gray), title('JPEG')
 vcNewGraphWin; imagesc(sraw), axis image; colormap(gray), title('RAW')
 
+
+%%
+
+n = 64;
+template = jpg(rStart:(rStart+n),(cStart:(cStart+n)),3);
+
+n = 96;
+A = raw(rStart:(rStart+n),(cStart:(cStart+n)));
+cc = normxcorr2(template,A);
+
+[max_cc, imax] = max(abs(cc(:)));
+[ypeak, xpeak] = ind2sub(size(cc),imax(1));
+corr_offset = [ (ypeak-size(template,1)) (xpeak-size(template,2)) ];
+fprintf('Estimated offset row %i, col %i\n',corr_offset(1),corr_offset(2));
+
+% vcNewGraphWin; mesh(C)
+rMax = max(cc,[],1); cMax = max(cc,[],2);
+vcNewGraphWin; plot(rMax); hold on; plot(cMax);
+
+%%
+vcNewGraphWin;
+% 
+whichCol = 40;
+tmpRaw = double(sraw(:,whichCol));
+tmpRaw = tmpRaw/max(tmpRaw(:));
+plot((1:128) - corr_offset(1),tmpRaw)
+hold on;
+tmpJPG = double(sjpg(:,whichCol));
+tmpJPG = tmpJPG/max(tmpJPG(:));
+plot((1:128),tmpJPG)
 
 
 
