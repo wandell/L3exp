@@ -34,6 +34,10 @@ fname = fullfile(remoteD,remoteF);
 if status, disp('Done.'); end
 raw = imread('rawFile.pgm');
 
+% The lowest values are not that close to 0.  So, I think when we fit the
+% linear model we need to remove a pretty big (200? 300?) offset.
+% vcNewGraphWin; hist(double(raw(:)),300); set(gca,'xscale','log')
+
 % Read the jpg into the variable jpg
 remoteF = 'JPG/DSC_0767.JPG';
 fname = fullfile(remoteD,remoteF);
@@ -97,6 +101,28 @@ tst(:,:,2) = ieScale(tmpJPG(:,:,channel),1);
 vcNewGraphWin; imagesc(tst);
 
 %% At this point, the jpg and raw data should be aligned.
+% 
+% We now start getting an RGB point from the JPEG file and a corresponding
+% patch from the PGM mosaic.
+
+[X,Y] = meshgrid(5:64:1024,5:64:1024);
+centers = [X(:),Y(:)];
+nCenters = size(centers,1);
+rgb = zeros(3,nCenters);
+for ii=1:nCenters
+    rgb(:,ii) = squeeze(jpg(centers(ii,1),centers(ii,2),:));
+end
+
+% Now get the corresponding patches
+p = patchExtract(raw,centers,[5 5]);
+
+q = [p; ones(1,size(p,2))];
+    
+% Does not work well for all the R pixels.  We should try sorting out by
+% just the R pixels in a particular response level.
+w = rgb/q
+estRGB = w*q;
+vcNewGraphWin; plot(rgb(:),estRGB(:),'.');
 
 
 %% END
